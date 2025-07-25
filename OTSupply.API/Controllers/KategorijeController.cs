@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OTSupply.API.CustomActionFilter;
 using OTSupply.API.Data;
 using OTSupply.API.Models.Domain;
 using OTSupply.API.Models.DTO;
@@ -12,10 +15,12 @@ namespace OTSupply.API.Controllers
     public class KategorijeController : ControllerBase
     {
         private readonly OTSupplyDbContext dbContext;
+        private readonly IMapper mapper;
 
-        public KategorijeController(OTSupplyDbContext dbContext)
+        public KategorijeController(OTSupplyDbContext dbContext,IMapper mapper)
         {
                 this.dbContext=dbContext;
+            this.mapper = mapper;
         }
 
 
@@ -26,19 +31,20 @@ namespace OTSupply.API.Controllers
         {
 
             //dobavljanje podataka iz baze
-            var kategorije = await dbContext.Kategorije.ToListAsync();
+            var kategorije = await dbContext.Kategorije.ToListAsync(); //iz baze uzimamo domen model kategorija
 
             //mapiranje podataka u dto
 
-            var kategorijeDto = new List<KategorijaDto>();
-            foreach (var kategorija in kategorije)
-            {
-                kategorijeDto.Add(new KategorijaDto()
-                {
-                    Id = kategorija.Id,
-                    Name = kategorija.Name
-                });
-            }
+          var kategorijeDto=  mapper.Map<List<KategorijaDto>>(kategorije);
+            //var kategorijeDto = new List<KategorijaDto>();
+            //foreach (var kategorija in kategorije)
+            //{
+            //    kategorijeDto.Add(new KategorijaDto()
+            //    {
+            //        Id = kategorija.Id,
+            //        Name = kategorija.Name
+            //    });
+            //}
 
             return Ok(kategorijeDto);
         }
@@ -49,7 +55,7 @@ namespace OTSupply.API.Controllers
         [Route("{id:Guid}")]
         public async Task<IActionResult> GetById([FromRoute] Guid id)
         {
-            // var kategorija = dbContext.Kategorije.Find(id);
+         
             //Uzimamo kategoriju domain model iz baze
             var kategorija = await dbContext.Kategorije.FirstOrDefaultAsync(x => x.Id == id);
 
@@ -57,13 +63,9 @@ namespace OTSupply.API.Controllers
             {
                 return NotFound();
             }
-
-            var kategorijaDto = new KategorijaDto
-            {
-                Id = kategorija.Id,
-                Name = kategorija.Name,
-            };
-
+            
+            var kategorijaDto= mapper.Map<KategorijaDto>(kategorija);
+          
             //vracamo dto nazad klientu
             return Ok(kategorijaDto);
         }
@@ -73,62 +75,64 @@ namespace OTSupply.API.Controllers
         //POST: https://localhost:portnumber/api/gradovi
 
         [HttpPost]
+        [ValidateModel]
+        [Authorize(Roles =("Admin"))]
 
         public async Task<IActionResult> Create([FromBody] AddKategorijaDto addKategorijaDto)
         {
-            //mapiranje DTO u domain model
+           
+                //mapiranje DTO u domain model
 
-            var kategorija = new Kategorija
-            {
-                Name = addKategorijaDto.Name
-            };
+                var kategorija = mapper.Map<Kategorija>(addKategorijaDto);
 
-            // Domen model stavljamo u bazu
+                // Domen model stavljamo u bazu
 
-           await dbContext.Kategorije.AddAsync(kategorija);
-            await dbContext.SaveChangesAsync();
+                await dbContext.Kategorije.AddAsync(kategorija);
+                await dbContext.SaveChangesAsync();
 
-            //Mapiranje domen modela u dto
+                //Mapiranje domen modela u dto
 
-            var kategorijaDto = new KategorijaDto
-            {
-                Id = kategorija.Id,
-                Name = kategorija.Name
-            };
+                var kategorijaDto = mapper.Map<KategorijaDto>(kategorija);
 
-            return CreatedAtAction(nameof(GetById), new { id = kategorija.Id }, kategorijaDto);
+                return CreatedAtAction(nameof(GetById), new { id = kategorija.Id }, kategorijaDto);
+         
+            
         }
 
 
-        //Update grada
-        //UPDATE:  https://localhost:portnumber/api/gradovi/{id}
+        //Update kategorije
+        //UPDATE:  https://localhost:portnumber/api/kategorije{id}
         [HttpPut]
         [Route("{id:Guid}")]
+        [ValidateModel]
+        [Authorize(Roles ="Admin")]
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateKategorijaDto updateKategorijaDto)
         {
-            //Proveravamo dal postoji grad
-            var kategorijaDomen = await dbContext.Kategorije.FirstOrDefaultAsync(x => x.Id == id);
+            
+                //Proveravamo dal postoji grad
+                var kategorijaDomen = await dbContext.Kategorije.FirstOrDefaultAsync(x => x.Id == id);
 
-            if (kategorijaDomen == null)
-            {
-                return NotFound();
-            }
+                if (kategorijaDomen == null)
+                {
+                    return NotFound();
+                }
 
 
-            //mapiranje  Dto koji smo poslali u domen model
+                //mapiranje  Dto koji smo poslali u domen model
 
-            kategorijaDomen.Name = updateKategorijaDto.Name;
+                kategorijaDomen.Name = updateKategorijaDto.Name;
 
-           await dbContext.SaveChangesAsync();
+                await dbContext.SaveChangesAsync();
 
-            //Konvertovanje domen modela u dto
+                //Konvertovanje domen modela u dto
 
-            var kategorijaDto = new KategorijaDto
-            {
-                Id = kategorijaDomen.Id,
-                Name = kategorijaDomen.Name
-            };
-            return Ok(kategorijaDto);
+                var kategorijaDto = new KategorijaDto
+                {
+                    Id = kategorijaDomen.Id,
+                    Name = kategorijaDomen.Name
+                };
+                return Ok(kategorijaDto);
+           
 
         }
 
@@ -140,6 +144,7 @@ namespace OTSupply.API.Controllers
 
         [HttpDelete]
         [Route("{id:Guid}")]
+        [Authorize(Roles ="Admin")]
 
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
@@ -158,11 +163,8 @@ namespace OTSupply.API.Controllers
 
             //opcionalno da vratimo izbrisani grad nazad u ok response
             //mapiranje domen modela u dto
-            var kategorijaDto = new KategorijaDto
-            {
-                Id = kategorijaDomen.Id,
-                Name = kategorijaDomen.Name
-            };
+            var kategorijaDto = mapper.Map<KategorijaDto>(kategorijaDomen);
+            
             return Ok(kategorijaDto);
 
 

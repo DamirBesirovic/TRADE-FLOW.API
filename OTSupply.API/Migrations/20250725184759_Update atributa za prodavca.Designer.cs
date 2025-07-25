@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OTSupply.API.Data;
 
@@ -11,9 +12,11 @@ using OTSupply.API.Data;
 namespace OTSupply.API.Migrations
 {
     [DbContext(typeof(OTSupplyDbContext))]
-    partial class OTSupplyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250725184759_Update atributa za prodavca")]
+    partial class Updateatributazaprodavca
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

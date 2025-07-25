@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OTSupply.API.Data;
 
@@ -11,9 +12,11 @@ using OTSupply.API.Data;
 namespace OTSupply.API.Migrations
 {
     [DbContext(typeof(OTSupplyDbContext))]
-    partial class OTSupplyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250130005558_Dodavanje korisnika,rolova i autorizacije")]
+    partial class Dodavanjekorisnikarolovaiautorizacije
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -395,35 +398,33 @@ namespace OTSupply.API.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Bio")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Id_Korisnik")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("ImeFirme")
+                    b.Property<string>("Ime")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<bool>("IsVerified")
-                        .HasColumnType("bit");
-
                     b.Property<double>("Ocena")
+                        .HasMaxLength(50)
                         .HasColumnType("float");
 
-                    b.Property<string>("PfpUrl")
+                    b.Property<string>("bio")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PhoneNumber")
+                    b.Property<bool>("isVerified")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("pfpUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Id_Korisnik");
 
-                    b.HasIndex("ImeFirme");
+                    b.HasIndex("Ime");
 
                     b.ToTable("Prodavci", (string)null);
                 });
@@ -514,7 +515,7 @@ namespace OTSupply.API.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("OTSupply.API.Models.Domain.Prodavac", "Prodavac")
+                    b.HasOne("OTSupply.API.Models.Domain.Prodavac", "prodavac")
                         .WithMany("Oglasi")
                         .HasForeignKey("Prodavac_Id")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -524,7 +525,7 @@ namespace OTSupply.API.Migrations
 
                     b.Navigation("Kategorija");
 
-                    b.Navigation("Prodavac");
+                    b.Navigation("prodavac");
                 });
 
             modelBuilder.Entity("OTSupply.API.Models.Domain.Prodavac", b =>

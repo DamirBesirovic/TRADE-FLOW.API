@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OTSupply.API.CustomActionFilter;
 using OTSupply.API.Data;
 using OTSupply.API.Models.Domain;
 using OTSupply.API.Models.DTO;
@@ -18,13 +20,24 @@ namespace OTSupply.API.Controllers
         }
 
 
-        // GET: https://localhost:portnumber/api/gradovi
+        // GET: https://localhost:portnumber/api/gradovi?filterOn=Name&filterQuery=Track
         [HttpGet]
-        public  async Task<IActionResult> GetAll()
+        public  async Task<IActionResult> GetAll([FromQuery] string? filterOn, [FromQuery] string? filterQuery) 
         {
 
             //dobavljanje podataka iz baze
-            var gradovi = await dbContext.Gradovi.ToListAsync();
+            var gradovi = dbContext.Gradovi.AsQueryable();
+            //var gradovi = await dbContext.Gradovi.ToListAsync();
+
+            //filtriranje
+
+            if(string.IsNullOrWhiteSpace(filterOn)==false && string.IsNullOrWhiteSpace(filterQuery) == false)
+            {
+                if (filterOn.Equals("Name" ,StringComparison.OrdinalIgnoreCase))
+                {
+                    gradovi = gradovi.Where(x=> x.Name.Contains(filterQuery));
+                }
+            }
 
             //mapiranje podataka u dto
 
@@ -69,6 +82,10 @@ namespace OTSupply.API.Controllers
         //POST: https://localhost:portnumber/api/gradovi
 
         [HttpPost]
+        [ValidateModel]
+        [Authorize(Roles ="Admin")]
+
+        
 
         public async Task<IActionResult> Create([FromBody] AddGradDto addGradDto)
         {
@@ -100,6 +117,8 @@ namespace OTSupply.API.Controllers
         //UPDATE:  https://localhost:portnumber/api/gradovi/{id}
         [HttpPut]
         [Route("{id:Guid}")]
+        [ValidateModel]
+        [Authorize(Roles ="Admin")]
 
         public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateGradDto updateGradDto)
         {
@@ -137,6 +156,7 @@ namespace OTSupply.API.Controllers
 
         [HttpDelete]
         [Route("{id:Guid}")]
+        [Authorize(Roles = "Admin")]
 
         public async Task<IActionResult> Delete([FromRoute] Guid id)
         {
@@ -169,6 +189,19 @@ namespace OTSupply.API.Controllers
 
 
 
+        [HttpGet("debug-auth")]
+        public IActionResult DebugAuth()
+        {
+            return Ok(new
+            {
+                User.Identity?.IsAuthenticated,
+                User.Identity?.Name,
+                Claims = User.Claims.Select(c => new { c.Type, c.Value }),
+                Headers = Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString())
+            });
+        }
+
+      
 
     }
 }

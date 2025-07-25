@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OTSupply.API.Data;
 
@@ -11,9 +12,11 @@ using OTSupply.API.Data;
 namespace OTSupply.API.Migrations
 {
     [DbContext(typeof(OTSupplyDbContext))]
-    partial class OTSupplyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250721204802_Updating Oglasi tables")]
+    partial class UpdatingOglasitables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -414,9 +417,6 @@ namespace OTSupply.API.Migrations
                         .HasColumnType("float");
 
                     b.Property<string>("PfpUrl")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
