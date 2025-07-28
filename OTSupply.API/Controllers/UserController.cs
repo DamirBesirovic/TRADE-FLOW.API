@@ -191,5 +191,36 @@ namespace OTSupply.API.Controllers
             return Ok(response);
         }
 
+
+        [HttpPost]
+        [Authorize]
+
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto )
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return NotFound("Korisnik nije pronadjen");
+            }
+
+            // brisanje postojece poruke
+            var removePasswordResult = await userManager.RemovePasswordAsync(user);
+            if (!removePasswordResult.Succeeded)
+            {
+                return BadRequest(removePasswordResult.Errors);
+            }
+            // dodavanje nove lozinke
+
+            var addPasswordResult= await userManager.AddPasswordAsync(user, dto.NewPassword);
+            if (!addPasswordResult.Succeeded)
+            {
+                return BadRequest(addPasswordResult.Errors);
+            }
+
+            return Ok("Lozinka je uspesno promenjena");
+        }
+
     }
 }

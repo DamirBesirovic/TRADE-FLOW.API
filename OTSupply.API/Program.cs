@@ -46,6 +46,16 @@ builder.Services.AddSwaggerGen(options =>  //sve ovo u options=> se koristi da m
         }
     });
 });
+// cors za povezivanje sa frontom
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // Vite frontend
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddDbContext<OTSupplyDbContext>(options=>
 options.UseSqlServer(builder.Configuration.GetConnectionString("OTSupplyConnectionString")));
@@ -150,6 +160,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseCors("AllowFrontend"); // dodato za cors
 app.Use(async (context, next) =>
 {
     // Log the incoming request

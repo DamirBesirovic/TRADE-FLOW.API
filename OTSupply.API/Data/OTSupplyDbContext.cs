@@ -19,6 +19,8 @@ namespace OTSupply.API.Data
         public DbSet<ImageUrl> ImageUrls { get; set; }
         public DbSet<Prodavac> Prodavci { get; set; }
 
+        public DbSet<Zahtev> Zahtevi { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
