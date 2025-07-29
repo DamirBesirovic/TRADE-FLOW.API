@@ -126,12 +126,14 @@ namespace OTSupply.API.Controllers
             if (oglas == null)
                 return Forbid("Nemate pristup ovom zahtevu.");
 
-            // Obeleži kao procitano
+            // Obeleži kao procitan zahtev
             zahtev.Procitano = true;
             await context.SaveChangesAsync();
 
             return Ok("Zahtev uspešno obeležen kao pročitan.");
         }
+
+
 
     }
 }
