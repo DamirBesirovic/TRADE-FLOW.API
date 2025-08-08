@@ -126,7 +126,7 @@ namespace OTSupply.API.Controllers
             if (oglas == null)
                 return Forbid("Nemate pristup ovom zahtevu.");
 
-            // Obeleži kao procitan zahtev
+            // Obeleži kao procitan(seen) zahtev
             zahtev.Procitano = true;
             await context.SaveChangesAsync();
 
