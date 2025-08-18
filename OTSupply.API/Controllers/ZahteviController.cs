@@ -121,7 +121,7 @@ namespace OTSupply.API.Controllers
             if (zahtev == null)
                 return NotFound("Zahtev nije pronađen.");
 
-            // Da li je zahtev poslat oglasu koji pripada ovom prodavcu?
+            // Da li je zahtev poslat oglasu koji pripada prodavcu tom?
             var oglas = await context.Oglasi.FirstOrDefaultAsync(o => o.Id == zahtev.Oglas_Id && o.Prodavac_Id == prodavac.Id);
             if (oglas == null)
                 return Forbid("Nemate pristup ovom zahtevu.");
