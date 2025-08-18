@@ -24,7 +24,7 @@ namespace OTSupply.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "User")]
+        [Authorize]
         public async Task<IActionResult> CreateZahtev([FromBody] CreateZahtevDto dto)
         {
             var oglas = await context.Oglasi
@@ -126,7 +126,7 @@ namespace OTSupply.API.Controllers
             if (oglas == null)
                 return Forbid("Nemate pristup ovom zahtevu.");
 
-            // Obeleži kao procitan(seen) zahtev
+            // Obeleži kao pregledan (seen) zahtev
             zahtev.Procitano = true;
             await context.SaveChangesAsync();
 
