@@ -69,9 +69,15 @@ namespace OTSupply.API.Controllers
         }
 
 
-
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int page=1, [FromQuery] int pageSize=20)
+        public async Task<IActionResult> GetAll(
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 20,
+    [FromQuery] string? search = null,
+    [FromQuery] Guid? kategorija = null,
+    [FromQuery] Guid? grad = null,
+    [FromQuery] decimal? minPrice = null,
+    [FromQuery] decimal? maxPrice = null)
         {
             var query = context.Oglasi
                 .Include(o => o.ImageURLs)
@@ -79,6 +85,34 @@ namespace OTSupply.API.Controllers
                 .Include(o => o.Grad)
                 .Include(o => o.Prodavac)
                 .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(o =>
+                    o.Naslov.Contains(search) ||
+                    o.Opis.Contains(search) ||
+                    o.Materijal.Contains(search));
+            }
+
+            if (kategorija.HasValue)
+            {
+                query = query.Where(o => o.Kategorija_Id == kategorija.Value);
+            }
+
+            if (grad.HasValue)
+            {
+                query = query.Where(o => o.Grad_Id == grad.Value);
+            }
+
+            if (minPrice.HasValue)
+            {
+                query = query.Where(o => o.Cena >= minPrice.Value);
+            }
+
+            if (maxPrice.HasValue)
+            {
+                query = query.Where(o => o.Cena <= maxPrice.Value);
+            }
 
             var total = await query.CountAsync();
 
@@ -100,7 +134,9 @@ namespace OTSupply.API.Controllers
                 Kategorija = o.Kategorija?.Name,
                 Grad = o.Grad?.Name,
                 Prodavac = o.Prodavac?.ImeFirme,
-                ProdavacId=o.Prodavac_Id
+                ProdavacId = o.Prodavac_Id,
+                GradId = o.Grad_Id,
+                KategorijaId = o.Kategorija_Id
             });
 
             return Ok(new
@@ -111,8 +147,51 @@ namespace OTSupply.API.Controllers
                 TotalPages = (int)Math.Ceiling((double)total / pageSize),
                 Items = result
             });
-
         }
+
+        //[HttpGet]
+        //public async Task<IActionResult> GetAll([FromQuery] int page=1, [FromQuery] int pageSize=20)
+        //{
+        //    var query = context.Oglasi
+        //        .Include(o => o.ImageURLs)
+        //        .Include(o => o.Kategorija)
+        //        .Include(o => o.Grad)
+        //        .Include(o => o.Prodavac)
+        //        .AsQueryable();
+
+        //    var total = await query.CountAsync();
+
+        //    var oglasi = await query
+        //        .OrderByDescending(o => o.Id)
+        //        .Skip((page - 1) * pageSize)
+        //        .Take(pageSize)
+        //        .ToListAsync();
+
+        //    var result = oglasi.Select(o => new GetOglasDto
+        //    {
+        //        Id = o.Id,
+        //        Naslov = o.Naslov,
+        //        Opis = o.Opis,
+        //        Materijal = o.Materijal,
+        //        Cena = o.Cena,
+        //        Mesto = o.Mesto,
+        //        ImageUrls = o.ImageURLs.Select(i => i.Url).ToList(),
+        //        Kategorija = o.Kategorija?.Name,
+        //        Grad = o.Grad?.Name,
+        //        Prodavac = o.Prodavac?.ImeFirme,
+        //        ProdavacId=o.Prodavac_Id
+        //    });
+
+        //    return Ok(new
+        //    {
+        //        TotalItems = total,
+        //        Page = page,
+        //        PageSize = pageSize,
+        //        TotalPages = (int)Math.Ceiling((double)total / pageSize),
+        //        Items = result
+        //    });
+
+        //}
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
