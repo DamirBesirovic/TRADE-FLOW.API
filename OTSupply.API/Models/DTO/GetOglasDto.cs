@@ -9,7 +9,7 @@
     public List<string> ImageUrls { get; set; }
 
     public string Kategorija { get; set; }
-    public Guid KategorijaId { get; set; }   // dodato
+    public Guid KategorijaId { get; set; }   // dodatak
     public string Grad { get; set; }
     public Guid GradId { get; set; }         // dodato
     public string Prodavac { get; set; } //ime od firme prodavca
