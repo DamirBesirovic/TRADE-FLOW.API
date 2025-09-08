@@ -12,6 +12,6 @@
     public Guid KategorijaId { get; set; }   // dodatak
     public string Grad { get; set; }
     public Guid GradId { get; set; }         // dodato
-    public string Prodavac { get; set; } //ime od firme prodavca
+    public string Prodavac { get; set; } //ime firme
     public Guid ProdavacId { get; set; }
 }
