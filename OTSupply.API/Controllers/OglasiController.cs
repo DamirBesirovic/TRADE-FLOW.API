@@ -149,6 +149,63 @@ namespace OTSupply.API.Controllers
             });
         }
 
+
+
+        [HttpGet("my-ads")]
+        [Authorize(Roles = "Seller,Admin")]
+        public async Task<IActionResult> GetMyAds(
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 20)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var prodavac = await context.Prodavci.FirstOrDefaultAsync(p => p.Id_Korisnik == userId);
+
+            if (prodavac == null)
+                return Unauthorized("Niste prodavac.");
+
+            var query = context.Oglasi
+                .Where(o => o.Prodavac_Id == prodavac.Id)
+                .Include(o => o.ImageURLs)
+                .Include(o => o.Kategorija)
+                .Include(o => o.Grad)
+                .AsQueryable();
+
+            var total = await query.CountAsync();
+
+            var oglasi = await query
+                .OrderByDescending(o => o.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var result = oglasi.Select(o => new GetOglasDto
+            {
+                Id = o.Id,
+                Naslov = o.Naslov,
+                Opis = o.Opis,
+                Materijal = o.Materijal,
+                Cena = o.Cena,
+                Mesto = o.Mesto,
+                ImageUrls = o.ImageURLs.Select(i => i.Url).ToList(),
+                Kategorija = o.Kategorija?.Name,
+                Grad = o.Grad?.Name,
+                Prodavac = o.Prodavac?.ImeFirme,
+                ProdavacId = o.Prodavac_Id,
+                GradId = o.Grad_Id,
+                KategorijaId = o.Kategorija_Id
+            });
+
+            return Ok(new
+            {
+                TotalItems = total,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling((double)total / pageSize),
+                Items = result
+            });
+        }
+
+
         //[HttpGet]
         //public async Task<IActionResult> GetAll([FromQuery] int page=1, [FromQuery] int pageSize=20)
         //{
