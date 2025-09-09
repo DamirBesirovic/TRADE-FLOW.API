@@ -25,36 +25,64 @@ namespace OTSupply.API.Controllers
 
         [HttpGet("profile")]
         [Authorize]
-
         public async Task<IActionResult> GetMyProfile()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if(string.IsNullOrEmpty(userId))
-            {
+            if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
-            }
+
             var user = await userManager.FindByIdAsync(userId);
-            if(user == null)
-            {
+            if (user == null)
                 return NotFound("Korisnik ne postoji");
-            }
 
             var roles = await userManager.GetRolesAsync(user);
 
+            // Ako je prodavac, vraćamo SellerProfileDto
+            if (roles.Contains("Seller"))
+            {
+                var seller = await context.Prodavci.FirstOrDefaultAsync(p => p.Id_Korisnik == userId);
+                if (seller == null)
+                    return NotFound("Prodavac nije pronađen.");
+
+                var sellerDto = new SellerProfileDto
+                {
+                    Id = user.Id,
+                    Username = user.UserName,
+                    Email = user.Email,
+                    Ime = user.Ime,
+                    Prezime = user.Prezime,
+                    DatumRegistracije = user.DatumRegistracije,
+                    isFirstLogin = user.isFirstLogin,
+                    PhoneNumber = seller.PhoneNumber, // uzimamo iz Prodavac jer može da se razlikuje
+                    Roles = roles.ToList(),
+
+                    ImeFirme = seller.ImeFirme,
+                    Bio = seller.Bio,
+                    PfpUrl = seller.PfpUrl,
+                    Ocena = seller.Ocena,
+                    IsVerified = seller.IsVerified
+                };
+
+                return Ok(sellerDto);
+            }
+
+            // Običan user
             var dto = new UserProfileDto
             {
                 Id = user.Id,
-                Username=user.UserName,
-                Email=user.Email,
-                Ime=user.Ime,
-                Prezime=user.Prezime,
-                DatumRegistracije=user.DatumRegistracije,
-                isFirstLogin=user.isFirstLogin,
-                PhoneNumber=user.PhoneNumber,
-                Roles=roles.ToList()
+                Username = user.UserName,
+                Email = user.Email,
+                Ime = user.Ime,
+                Prezime = user.Prezime,
+                DatumRegistracije = user.DatumRegistracije,
+                isFirstLogin = user.isFirstLogin,
+                PhoneNumber = user.PhoneNumber,
+                Roles = roles.ToList()
             };
+
             return Ok(dto);
         }
+
 
         // PUT: api/User/update-profile
         [HttpPut("update-profile")]
