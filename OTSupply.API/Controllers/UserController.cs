@@ -222,5 +222,49 @@ namespace OTSupply.API.Controllers
             return Ok("Lozinka je uspesno promenjena");
         }
 
+        // DELETE: api/User/delete-account
+        [HttpDelete("delete-account")]
+        [Authorize]
+        public async Task<IActionResult> DeleteAccount()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var user = await userManager.FindByIdAsync(userId);
+            if (user == null)
+                return NotFound("Korisnik nije pronađen.");
+
+            // ako je prodavac, obriši i njegove oglase + entry iz Prodavci
+            var seller = await context.Prodavci.FirstOrDefaultAsync(p => p.Id_Korisnik == user.Id);
+            if (seller != null)
+            {
+                // pronalazak svih oglasa tog prodavca
+                var oglasi = await context.Oglasi
+                    .Include(o => o.ImageURLs)
+                    .Where(o => o.Prodavac_Id == seller.Id)
+                    .ToListAsync();
+
+                // obriši slike i oglase
+                foreach (var oglas in oglasi)
+                {
+                    context.ImageUrls.RemoveRange(oglas.ImageURLs);
+                }
+                context.Oglasi.RemoveRange(oglasi);
+
+                // obriši prodavca
+                context.Prodavci.Remove(seller);
+                await context.SaveChangesAsync();
+            }
+
+            // obriši samog korisnika
+            var result = await userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            return Ok("Nalog i svi povezani podaci su uspešno obrisani.");
+        }
+
+
     }
 }
