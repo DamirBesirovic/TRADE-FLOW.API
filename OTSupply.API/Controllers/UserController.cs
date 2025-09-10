@@ -220,35 +220,24 @@ namespace OTSupply.API.Controllers
         }
 
 
-        [HttpPost]
+        [HttpPost("change-password")]
         [Authorize]
-
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto )
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = await userManager.FindByIdAsync(userId);
 
             if (user == null)
-            {
-                return NotFound("Korisnik nije pronadjen");
-            }
+                return NotFound("Korisnik nije pronađen.");
 
-            // brisanje postojece poruke
-            var removePasswordResult = await userManager.RemovePasswordAsync(user);
-            if (!removePasswordResult.Succeeded)
-            {
-                return BadRequest(removePasswordResult.Errors);
-            }
-            // dodavanje nove lozinke
+            var result = await userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
 
-            var addPasswordResult= await userManager.AddPasswordAsync(user, dto.NewPassword);
-            if (!addPasswordResult.Succeeded)
-            {
-                return BadRequest(addPasswordResult.Errors);
-            }
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
 
-            return Ok("Lozinka je uspesno promenjena");
+            return Ok("Lozinka je uspešno promenjena.");
         }
+
 
         // DELETE: api/User/delete-account
         [HttpDelete("delete-account")]
