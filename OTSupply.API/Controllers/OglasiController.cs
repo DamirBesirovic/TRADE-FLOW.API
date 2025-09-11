@@ -34,39 +34,70 @@ namespace OTSupply.API.Controllers
         [ValidateModel]
         public async Task<IActionResult> CreateOglas([FromBody] AddOglasDto addOglasDto)
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            var prodavac = await context.Prodavci.FirstOrDefaultAsync(p => p.Id_Korisnik == userId);
-            if (prodavac == null)
-                return Unauthorized("Niste prodavac.");
-
-            var oglas = mapper.Map<Oglas>(addOglasDto);
-            oglas.Prodavac_Id = prodavac.Id;
-
-            oglas.ImageURLs = addOglasDto.ImageUrls.Select(url => new ImageUrl
+            try
             {
-                Id = Guid.NewGuid(),
-                Url = url
-            }).ToList();
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            await context.Oglasi.AddAsync(oglas);
-            await context.SaveChangesAsync();
+                var prodavac = await context.Prodavci.FirstOrDefaultAsync(p => p.Id_Korisnik == userId);
+                if (prodavac == null)
+                    return Unauthorized("Niste prodavac.");
 
-            var response = new CreateOglasResponseDto
+                // Create oglas manually or use AutoMapper for basic properties only
+                var oglas = new Oglas
+                {
+                    Id = Guid.NewGuid(),
+                    Naslov = addOglasDto.Naslov,
+                    Opis = addOglasDto.Opis,
+                    Materijal = addOglasDto.Materijal,
+                    Cena = addOglasDto.Cena,
+                    Mesto = addOglasDto.Mesto,
+                    Kategorija_Id = addOglasDto.Kategorija_Id,
+                    Grad_Id = addOglasDto.Grad_Id,
+                    Prodavac_Id = prodavac.Id,
+                    ImageURLs = new List<ImageUrl>()
+                };
+
+                // Handle images
+                foreach (var url in addOglasDto.ImageUrls ?? new List<string>())
+                {
+                    if (!string.IsNullOrWhiteSpace(url))
+                    {
+                        oglas.ImageURLs.Add(new ImageUrl
+                        {
+                            Id = Guid.NewGuid(),
+                            Url = url,
+                            OglasId = oglas.Id // Set the foreign key
+                        });
+                    }
+                }
+
+                await context.Oglasi.AddAsync(oglas);
+                await context.SaveChangesAsync();
+
+                var response = new CreateOglasResponseDto
+                {
+                    Id = oglas.Id,
+                    Naslov = oglas.Naslov,
+                    Opis = oglas.Opis,
+                    Materijal = oglas.Materijal,
+                    Cena = oglas.Cena,
+                    Mesto = oglas.Mesto,
+                    ImageUrls = oglas.ImageURLs.Select(i => i.Url).ToList(),
+                    Kategorija_Id = oglas.Kategorija_Id,
+                    Grad_Id = oglas.Grad_Id
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
             {
-                Id = oglas.Id,
-                Naslov = oglas.Naslov,
-                Opis = oglas.Opis,
-                Materijal = oglas.Materijal,
-                Cena = oglas.Cena,
-                Mesto = oglas.Mesto,
-                ImageUrls = oglas.ImageURLs.Select(i => i.Url).ToList(),
-                Kategorija_Id = oglas.Kategorija_Id,
-                Grad_Id = oglas.Grad_Id
-            };
-
-            return Ok(response);
+                // Log the full exception for debugging
+                Console.WriteLine($"Error creating oglas: {ex}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
+
+
 
 
         [HttpGet]

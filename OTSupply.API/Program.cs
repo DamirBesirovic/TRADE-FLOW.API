@@ -53,7 +53,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:5173") // Vite frontend
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -158,10 +159,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+
+app.UseCors("AllowFrontend"); // dodato za cors
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseCors("AllowFrontend"); // dodato za cors
+
 app.Use(async (context, next) =>
 {
     // Log the incoming request
