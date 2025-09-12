@@ -267,7 +267,7 @@ namespace OTSupply.API.Controllers
         //        Kategorija = o.Kategorija?.Name,
         //        Grad = o.Grad?.Name,
         //        Prodavac = o.Prodavac?.ImeFirme,
-        //        ProdavacId=o.Prodavac_Id covek
+        //        ProdavacId=o.Prodavac_Id 
         //    });
 
         //    return Ok(new
