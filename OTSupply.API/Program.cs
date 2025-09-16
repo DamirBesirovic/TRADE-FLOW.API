@@ -9,7 +9,11 @@ using OTSupply.API.Models.Domain;
 using OTSupply.API.Repositories;
 using Microsoft.OpenApi.Models;
 using System.Security.Claims;
-
+using OTSupply.API.GraphQL.Queries;
+using OTSupply.API.GraphQL.Mutations;
+using HotChocolate;
+using HotChocolate.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,9 +22,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>  //sve ovo u options=> se koristi da moze da se radi autentifikacija i autorizacija preko swaggera
+builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1",new OpenApiInfo { Title="OTSupply API", Version="v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "OTSupply API", Version = "v1" });
     options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -46,6 +50,7 @@ builder.Services.AddSwaggerGen(options =>  //sve ovo u options=> se koristi da m
         }
     });
 });
+
 // cors za povezivanje sa frontom
 builder.Services.AddCors(options =>
 {
@@ -58,26 +63,19 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<OTSupplyDbContext>(options=>
+builder.Services.AddDbContext<OTSupplyDbContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("OTSupplyConnectionString")));
 
 // ovde idu repozitoriji
-builder.Services.AddScoped<ITokenRepository,TokenRepository>();
+builder.Services.AddScoped<ITokenRepository, TokenRepository>();
 //
 
 builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
-//builder.Services.AddIdentityCore<IdentityUser>()
-//    .AddRoles<IdentityRole>()
-//    .AddTokenProvider<DataProtectorTokenProvider<IdentityUser>>("OTSupply")
-//    .AddEntityFrameworkStores<OTSupplyDbContext>()
-//    .AddDefaultTokenProviders();
+builder.Services.AddHttpContextAccessor();
 
-//
 builder.Services.AddIdentity<Korisnik, IdentityRole>()
     .AddEntityFrameworkStores<OTSupplyDbContext>()
     .AddDefaultTokenProviders();
-//
-
 
 builder.Services.Configure<IdentityOptions>(options =>
 {
@@ -89,22 +87,6 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.Password.RequiredUniqueChars = 0;
 });
 
-
-//builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-//    .AddJwtBearer(options =>
-//    options.TokenValidationParameters = new TokenValidationParameters
-//    {
-//        ValidateIssuer = true,
-//        ValidateAudience = true,
-//        ValidateLifetime = true,
-//        ValidateIssuerSigningKey = true,
-//        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-//        ValidAudience = builder.Configuration["Jwt:Audience"],
-//        IssuerSigningKey = new SymmetricSecurityKey(
-//            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-
-
-//    });
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -122,17 +104,14 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-        // These are CRITICAL for your setup:
         NameClaimType = ClaimTypes.Name,
-        RoleClaimType = ClaimTypes.Role,
-        // Add this to match your token's algorithm:
+        RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
         CryptoProviderFactory = new CryptoProviderFactory()
         {
             CacheSignatureProviders = false
         }
     };
 
-    // This fixes silent authentication failures:
     options.Events = new JwtBearerEvents
     {
         OnAuthenticationFailed = context =>
@@ -148,6 +127,23 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Add authorization policies
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Seller", policy =>
+        policy.RequireRole("Seller"));
+});
+
+// --- GraphQL Server ---
+builder.Services
+    .AddGraphQLServer()
+    .AddAuthorization()
+    .AddQueryType<OglasQuery>()
+    .AddMutationType<OglasMutation>()
+    .AddProjections()
+    .AddFiltering()
+    .AddSorting();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -159,22 +155,17 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-
-app.UseCors("AllowFrontend"); // dodato za cors
-app.UseAuthentication();
-app.UseAuthorization();
-
-
+// MOVED DEBUG MIDDLEWARE BEFORE AUTHENTICATION
 app.Use(async (context, next) =>
 {
-    // Log the incoming request
     Console.WriteLine($"\n\n=== NEW REQUEST: {context.Request.Path} ===");
+    Console.WriteLine($"Auth Header: {context.Request.Headers["Authorization"]}");
 
-    // Log authentication status
+    await next();
+
     Console.WriteLine($"Authenticated: {context.User.Identity?.IsAuthenticated}");
     Console.WriteLine($"User: {context.User.Identity?.Name}");
 
-    // Log ALL claims
     if (context.User.Identity?.IsAuthenticated == true)
     {
         Console.WriteLine("Claims:");
@@ -184,16 +175,15 @@ app.Use(async (context, next) =>
         }
     }
 
-    // Log the Authorization header
-    Console.WriteLine($"Auth Header: {context.Request.Headers["Authorization"]}");
-
-    await next();
-
-    // Log the response
     Console.WriteLine($"Response: {context.Response.StatusCode}");
     Console.WriteLine("=== END REQUEST ===\n\n");
 });
 
+app.UseCors("AllowFrontend");
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapGraphQL("/graphql");
 app.MapControllers();
 
 app.Run();

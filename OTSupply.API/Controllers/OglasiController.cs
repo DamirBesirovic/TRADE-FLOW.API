@@ -291,7 +291,8 @@ namespace OTSupply.API.Controllers
                 .Include(o => o.Prodavac)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
-            if (o == null) return NotFound();
+            if (o == null)
+                return NotFound();
 
             var dto = new GetOglasDto
             {
@@ -303,12 +304,16 @@ namespace OTSupply.API.Controllers
                 Mesto = o.Mesto,
                 ImageUrls = o.ImageURLs.Select(i => i.Url).ToList(),
                 Kategorija = o.Kategorija?.Name,
+                KategorijaId = o.Kategorija_Id,
                 Grad = o.Grad?.Name,
-                Prodavac = o.Prodavac?.ImeFirme
+                GradId = o.Grad_Id,
+                Prodavac = o.Prodavac?.ImeFirme,
+                ProdavacId = o.Prodavac_Id
             };
 
             return Ok(dto);
         }
+
 
 
         [HttpPut("{id}")]
@@ -331,7 +336,7 @@ namespace OTSupply.API.Controllers
             if (oglas.Prodavac_Id != prodavac.Id)
                 return Forbid("Nemate pravo da menjate ovaj oglas.");
 
-            // Update podataka
+            // Update osnovnih podataka
             oglas.Naslov = dto.Naslov;
             oglas.Opis = dto.Opis;
             oglas.Materijal = dto.Materijal;
@@ -340,16 +345,17 @@ namespace OTSupply.API.Controllers
             oglas.Kategorija_Id = dto.Kategorija_Id;
             oglas.Grad_Id = dto.Grad_Id;
 
-            // Resetovanje slika
-            oglas.ImageURLs.Clear();
-            foreach (var url in dto.ImageUrls)
-            {
-                oglas.ImageURLs.Add(new ImageUrl { Id = Guid.NewGuid(), Url = url });
-            }
+            // Update slika
+            context.ImageUrls.RemoveRange(oglas.ImageURLs); // obriši stare
+            oglas.ImageURLs = dto.ImageUrls
+                .Where(u => !string.IsNullOrWhiteSpace(u))
+                .Select(u => new ImageUrl { Id = Guid.NewGuid(), Url = u, OglasId = oglas.Id })
+                .ToList();
 
             await context.SaveChangesAsync();
-            return NoContent(); // 204 OK no contentt
+            return NoContent(); // 204 OK
         }
+
 
 
         [HttpDelete("{id}")]
