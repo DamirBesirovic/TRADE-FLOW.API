@@ -15,6 +15,7 @@ using HotChocolate;
 using HotChocolate.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -63,8 +64,12 @@ builder.Services.AddCors(options =>
     });
 });
 
+//builder.Services.AddDbContext<OTSupplyDbContext>(options =>
+//options.UseSqlServer(builder.Configuration.GetConnectionString("OTSupplyConnectionString")));
+
+
 builder.Services.AddDbContext<OTSupplyDbContext>(options =>
-options.UseSqlServer(builder.Configuration.GetConnectionString("OTSupplyConnectionString")));
+options.UseNpgsql(Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? builder.Configuration.GetConnectionString("OTSupplyConnectionString")));
 
 // ovde idu repozitoriji
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();
