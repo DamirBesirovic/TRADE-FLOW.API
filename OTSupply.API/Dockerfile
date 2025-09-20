@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 # Set the working directory inside the container
-WORKDIR /src
+WORKDIR /OTSupply.API
 
 # Copy the .csproj file and restore any dependencies (via NuGet)
 COPY ["OTSupply.API.csproj", "."]
