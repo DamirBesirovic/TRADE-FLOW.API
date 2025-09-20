@@ -2,10 +2,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 # Set the working directory inside the container
-WORKDIR /OTSupply.API
+WORKDIR /src
 
 # Copy the .csproj file and restore any dependencies (via NuGet)
-COPY ["OTSupply.API.csproj", "."]
+COPY ["OTSupply.API/OTSupply.API.csproj", "."]
 
 # Restore the dependencies
 RUN dotnet restore
@@ -14,7 +14,7 @@ RUN dotnet restore
 COPY . .
 
 # Build the application
-RUN dotnet publish "OTSupply.API.csproj" -c Release -o /app/publish
+RUN dotnet publish "OTSupply.API/OTSupply.API.csproj" -c Release -o /app/publish
 
 # Step 2: Create the runtime image using the .NET runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
