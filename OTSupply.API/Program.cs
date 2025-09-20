@@ -57,7 +57,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // Vite frontend
+        policy.WithOrigins(["http://localhost:5173", "https://ordertosupplysrb.onrender.com"]) // Vite frontend
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
