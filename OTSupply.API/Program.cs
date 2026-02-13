@@ -163,6 +163,8 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseRouting();
+
 app.UseHttpsRedirection();
 
 // MOVED DEBUG MIDDLEWARE BEFORE AUTHENTICATION
