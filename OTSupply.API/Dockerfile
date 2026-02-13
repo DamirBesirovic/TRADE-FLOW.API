@@ -1,32 +1,28 @@
-# Step 1: Build the .NET application using the .NET SDK image
+# Build stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-
-# Set the working directory inside the container
 WORKDIR /src
 
-# Copy the .csproj file and restore any dependencies (via NuGet)
-COPY ["OTSupply.API/OTSupply.API.csproj", "."]
+# Copy solution and project
+COPY OTSupply.sln ./
+COPY OTSupply.API/OTSupply.API.csproj OTSupply.API/
 
-# Restore the dependencies
+# Restore
 RUN dotnet restore
 
-# Copy the rest of the application code
+# Copy everything else
 COPY . .
 
-# Build the application
-RUN dotnet publish "OTSupply.API/OTSupply.API.csproj" -c Release -o /app/publish
+# Publish
+RUN dotnet publish OTSupply.API/OTSupply.API.csproj -c Release -o /app/publish
 
-# Step 2: Create the runtime image using the .NET runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
-
-# Set the working directory inside the container
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
-# Copy the built application from the build stage
 COPY --from=build /app/publish .
 
-# Expose the port the app will listen on (default is 80 for ASP.NET Core)
 EXPOSE 8080
 
-# Define the entry point for the application
+ENV ASPNETCORE_URLS=http://+:8080
+
 ENTRYPOINT ["dotnet", "OTSupply.API.dll"]
