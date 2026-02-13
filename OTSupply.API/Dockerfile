@@ -4,7 +4,7 @@ WORKDIR /src
 
 # Copy solution and project
 COPY OTSupply.sln ./
-COPY OTSupply.API/OTSupply.API.csproj OTSupply.API/
+COPY ["OTSupply.API.csproj", "."]
 
 # Restore
 RUN dotnet restore
@@ -13,7 +13,7 @@ RUN dotnet restore
 COPY . .
 
 # Publish
-RUN dotnet publish OTSupply.API/OTSupply.API.csproj -c Release -o /app/publish
+RUN dotnet publish "OTSupply.API.csproj" -c Release -o /app/publish
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
